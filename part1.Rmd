@@ -1,0 +1,60 @@
+---
+title: "Project_Pt1"
+output: pdf_document
+date: "2023-02-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(haven)
+library(ggthemes)
+library(statar) 
+library(tidyquant)
+library(purrr)
+library(sandwich)
+library(lmtest)
+atlas <- read_dta("atlas.dta")
+view(atlas)
+
+
+```
+
+***Question 1***
+My name is Jose and I am from Willow Spring, North Carolina. The map below shows adult household income for children born to low income parents. Compared to similar children nationwide, my neighborhood has below average outcomes. 
+
+![](map.png)
+
+```{r q2}
+
+#Question 2: Summary statistics of all variables, including recording all missing values. 
+summary(atlas)
+
+```
+
+Most variables have at least some number of missing values. Many of them lack values for almost all tracts, especially the variables that pool data at the household level for different racial groups. This may be because many racial tracts do not have enough people belonging to that racial group to collect enough aggregate data for that given variable.
+
+***Question 3***
+The `kfr_pooled_pooled_p25` variable calculates the mean percentile rank for household income for people born to parents at the 25th percentile of the national distribution of household income. In other words, the higher the value for this variable, the higher absolute mobility. This is calculated with using a linear model to capture the effect that being born to parents at the 25th percentile of household income will have on income outcomes as adults, pooled at the census tract level.  
+
+```{r q4}
+
+#Question 4: Histogram of Absolute Mobility at the 25th percentile 
+
+absmob_histo <- atlas |> 
+                ggplot() + 
+                geom_histogram(aes(x = kfr_pooled_pooled_p25, y = after_stat(density))) + 
+                labs(title = "Ranked Absolute Mobility at the 25th Percentile",
+                     subtitle = "For household income 2014-15",
+                     x = "Mean percentile rank ")
+absmob_histo 
+
+ggsave("absmob_histo.png")
+
+
+```
+
+
+
+
+
