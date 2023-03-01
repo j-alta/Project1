@@ -645,9 +645,208 @@ The correlation coefficient between absolute mobility at the 25th percentile and
 
 ```{r q13a}
 
-#Q13A: Visualizing 
+#Q13A: Visualizing the relationship between strongly related covariates and absolute mobility
+
+#Covariate 1: Incarceration Rate
+wakeco <- atlas |> 
+          filter(state == 37,
+                 county == 183) #creating data frame of just my home county 
+
+scatterjail <- wakeco |> 
+             ggplot(aes(x = jail_pooled_pooled_p25, y = kfr_pooled_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between incarceration rate and absolute mobility in Wake County",
+                  subtitle = "At the 25th percentile",
+                  x = "Fraction incarcerated for children from families at the 25th percentile, 2010",
+                  y = "Absolute Mobility at the 25th percentile") 
+
+scatterjail
+
+ggsave("scatterjail.png")
+
+#Covariate 2: Median household income
+
+scatterincome <- wakeco |> 
+             ggplot(aes(x = med_hhinc1990, y = kfr_pooled_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean household income and absolute mobility in Wake County",
+                  x = "Median household income in 1990 ",
+                  y = "Absolute Mobility at the 25th percentile") 
+
+scatterincome
+
+ggsave("scatterincome.png")
+
+#Covariate 3: Average Commute Time in 2000
+
+scattercommute <- wakeco |> 
+             ggplot(aes(x = mean_commutetime2000, y = kfr_pooled_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean work commute time and absolute mobility in Wake County",
+                  x = "Average Commute Time of Working Adults in 2000",
+                  y = "Absolute Mobility at the 25th percentile") 
+
+scattercommute
+
+ggsave("scattercommute.png")
+
+```
+
+```{r q13b}
+
+#Q13B: Reporting correlation coefficients of covariates with absolute mobility 
+
+jailcorcoef <- cor(wakeco$kfr_pooled_pooled_p25, wakeco$jail_pooled_pooled_p25, use = "complete.obs")
+inccorcoef <- cor(wakeco$kfr_pooled_pooled_p25, wakeco$med_hhinc1990, use = "complete.obs")
+commutecorcoef <- cor(wakeco$kfr_pooled_pooled_p25, wakeco$mean_commutetime2000, use = "complete.obs")
+
+coefcomp <- data.frame(c("Incarceration Rate 2010", "Median Household Income 1990", "Mean Commute Time 2000"),
+                       c(jailcorcoef, inccorcoef, commutecorcoef))
+names(coefcomp)[1] <- "Covariate"
+names(coefcomp)[2] <- "Correlation Coefficient with absolute mobility"
+coefcomp
+
+
+```
+
+We see that there are negative correlations between the incarceration rate and the mean commute time and absolute mobility, respectively, and a fairly strong positive correlation between median household income (in 1990) and absolute mobility. 
+
+```{r q14}
+
+#Q14: Examining the relationship between covariates and absolute mobility by race and gender
+
+#Incarceration Rate: We will look at incarceration rates for Black males, Hispanic males, and White males, and see the relationship between that covariate and absolute mobility outcome for each of these racial/gender groups in Wake County 
+
+#Black Males
+
+jailblack <- wakeco |> 
+             ggplot(aes(x = jail_black_male_p25, y = kir_black_male_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between incarceration rate and absolute mobility for Black males in Wake County",
+                  subtitle = "At the 25th percentile",
+                  x = "Fraction of Black males incarcerated for children from families at the 25th percentile, 2010",
+                  y = "Absolute Mobility for Black males at the 25th percentile") 
+jailblack
+
+ggsave("jailblack.png")
+
+#White Males
+
+jailwhite <- wakeco |> 
+             ggplot(aes(x = jail_white_male_p25, y = kir_white_male_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between incarceration rate and absolute mobility for White males in Wake County",
+                  subtitle = "At the 25th percentile",
+                  x = "Fraction of White males incarcerated for children from families at the 25th percentile, 2010",
+                  y = "Absolute Mobility for White males at the 25th percentile") 
+jailwhite
+
+ggsave("jailwhite.png")
+
+#Hispanic Males
+
+jailhisp <- wakeco |> 
+             ggplot(aes(x = jail_hisp_male_p25, y = kir_hisp_male_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between incarceration rate and absolute mobility for Hispanic males in Wake County",
+                  subtitle = "At the 25th percentile",
+                  x = "Fraction of Hispanic males incarcerated for children from families at the 25th percentile, 2010",
+                  y = "Absolute Mobility for Hispanic males at the 25th percentile") 
+jailhisp
+
+ggsave("jailhisp.png")
+
+#Median Household Income: Next, we will look at median household income in 1990 and absolute mobility for Black, White, Hispanic, and Asian groups in Wake County 
+
+#Black Children
+blackincome <- wakeco |> 
+             ggplot(aes(x = med_hhinc1990, y = kfr_black_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean household income and absolute mobility for Black people in Wake County",
+                  x = "Median household income in 1990 ",
+                  y = "Absolute Mobility for Black people at the 25th percentile") 
+
+blackincome
+
+ggsave("blackincome.png")
+
+#White Children
+whiteincome <- wakeco |> 
+             ggplot(aes(x = med_hhinc1990, y = kfr_white_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean household income and absolute mobility for White people in Wake County",
+                  x = "Median household income in 1990 ",
+                  y = "Absolute Mobility for White people at the 25th percentile") 
+
+whiteincome
+
+ggsave("whiteincome.png")
+
+#Hispanic Children 
+hispincome <- wakeco |> 
+             ggplot(aes(x = med_hhinc1990, y = kfr_hisp_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean household income and absolute mobility for Hispanics in Wake County",
+                  x = "Median household income in 1990 ",
+                  y = "Absolute Mobility for Hispanics at the 25th percentile") 
+
+hispincome
+
+ggsave("hispincome.png")
+
+#Asian Children
+asianincome <- wakeco |> 
+             ggplot(aes(x = med_hhinc1990, y = kfr_asian_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between mean household income and absolute mobility for Asians in Wake County",
+                  x = "Median household income in 1990",
+                  y = "Absolute Mobility for Asians at the 25th percentile") 
+
+asianincome
+
+ggsave("asianincome.png")
 
 ```
 
 
+```{r q14b}
+
+#Q14 part 2: Reporting correlation coefficients of covariates with absolute mobility across race and gender 
+
+jailblackcorcoef <- cor(wakeco$kir_black_male_p25, wakeco$jail_black_male_p25, use = "complete.obs")
+jailwhitecorcoef <- cor(wakeco$kir_white_male_p25, wakeco$jail_white_male_p25, use = "complete.obs")
+jailhispcorcoef <- cor(wakeco$kir_hisp_male_p25, wakeco$jail_hisp_male_p25, use = "complete.obs")
+incblackcorcoef <- cor(wakeco$kfr_black_pooled_p25, wakeco$med_hhinc1990, use = "complete.obs")
+incwhitecorcoef <- cor(wakeco$kfr_white_pooled_p25, wakeco$med_hhinc1990, use = "complete.obs")
+inchispcorcoef <- cor(wakeco$kfr_hisp_pooled_p25, wakeco$med_hhinc1990, use = "complete.obs")
+incasiancorcoef <- cor(wakeco$kfr_asian_pooled_p25, wakeco$med_hhinc1990, use = "complete.obs")
+
+coefcomp_incarcerate <- data.frame(c("Incarceration Rate for Black Males", "Incarceration Rate for White Males", "Incarceration Rate for Hispanic Males"),
+                       c(jailblackcorcoef, jailwhitecorcoef, jailhispcorcoef))
+names(coefcomp_incarcerate)[1] <- "Incarceration Rate for Racial Group"
+names(coefcomp_incarcerate)[2] <- "Correlation Coefficient with Absolute Mobility for that Racial Group"
+coefcomp_incarcerate
+
+coefcomp_medinc <- data.frame(c("Median Household Income 1990", "Median Household Income 1990", "Median Household Income 1990", "Median Household Income 1990"),
+                              c("Black Absolute Mobility", "White Absolute Mobility", "Hispanic Absolute Mobility", "Asian Absolute Mobility"),
+                              c(incblackcorcoef, incwhitecorcoef, inchispcorcoef, incasiancorcoef))
+names(coefcomp_medinc)[1] <- "Covariate"
+names(coefcomp_medinc)[2] <- "Absolute Mobility Group"
+names(coefcomp_medinc)[3] <- "Correlation Coefficient with Absolute Mobility for that Racial Group"
+coefcomp_medinc
+
+```
+When examining the relationship between incarceration rates and absolute mobility across race and gender, we see a fairly strong negative correlation coefficient between the black male incarceration rate and the absolute mobility for black males (-0.33). We see a weaker negative correlation coefficient between said covariates for white males (-0.05), and the sample size for hispanic males in Wake County is too small for us to consider the correlation coefficient for that racial group (0.48).
+
+There is a clear pattern of fairly strong positive correlation coefficients between the median household income in 1990 and absolute mobility ranks for Blacks, Whites, Hispanics, and Asians. However, we should discount the correlation coefficient for Asian absolute mobility due to its small sample size. We should also note the difference between the correlation coefficient for Blacks' absolute mobility and the median household income (0.31) and that for Whites and Hispanics (0.452 and 0.458 respectively) - suggesting that, at least for Black children growing up in Wake County, there isn't as strong of a relationship between median household and their absolute mobility outcomes.
 
