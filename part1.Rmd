@@ -205,15 +205,171 @@ ggsave("scatterbargain.png")
 
 And there they are! These are the bargain tracts with cheap rent and above average mobility outcomes in Wake County, NC.
 
-```{r q10}
+```{r q10a1}
 
-#Question 10
+#Question 10: Tracking changes in Wake County over the last 20 years
 
+#10A: scatter plot of poverty rate in 1990 and 2010 for Wake County 
 
+wakepoverty <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot(aes(x = poor_share1990, y = poor_share2010)) +
+           geom_point(aes(x = poor_share1990, y = poor_share2010)) +
+           geom_smooth(method = "lm", se = F) +
+           labs(x = "Poverty Rate in 1990",
+                y = "Poverty rate in 2010",
+                title = "Poverty Rate, 1990-2010 in Wake County, NC",
+                subtitle = "Most tracts saw few changes in their poverty rate over time") 
+wakepoverty
 
+ggsave("wakepoverty.png")
 
 ```
 
 
+```{r q10a2}
 
+#10A: scatter plot of Black population in 1990 and 2010 for Wake County
+
+wakeblack <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot(aes(x = share_black2000, y = share_black2010)) +
+           geom_point() +
+           geom_smooth(method = "lm", se = F) +
+           labs(x = "Black population in 2000",
+                y = "Black population in 2010",
+                title = "Black population share 2000-2010 in Wake County, NC",
+                subtitle = "Roughly equal number of census tracts saw their Black population share rise or fall over time") 
+wakeblack
+
+ggsave("wakeblack.png")
+
+```
+
+
+```{r q10a3}
+
+#10A: scatter plot of Hispanic population in 1990 and 2010 for Wake County 
+
+wakehisp <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot(aes(x = share_hisp2000, y = share_hisp2010)) +
+           geom_point() +
+           geom_smooth(method = "lm", se = F) +
+           labs(x = "Hispanic population in 2000",
+                y = "Hispanic population in 2010",
+                title = "Hispanic population share 2000-2010 in Wake County, NC",
+                subtitle = "Several tracts saw their Hispanic population grow significantly over time") 
+wakehisp
+
+ggsave("wakehisp.png")
+```
+
+
+```{r q10a4}
+
+#10A: scatter plot of Asian population in 1990 and 2010 for Wake County 
+
+wakeasian <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot(aes(x = share_asian2000, y = share_asian2010)) +
+           geom_point() +
+           geom_smooth(method = "lm", se = F) +
+           labs(x = "Asian population in 2000",
+                y = "Asian population in 2010",
+                title = "Asian population share 2000-2010 in Wake County, NC",
+                subtitle = "Select number of tracts saw their Asian population more than double over time") 
+wakeasian
+
+ggsave("wakeasian.png")
+```
+
+
+```{r q10a5}
+
+#10A: scatter plot of White population in 1990 and 2010 for Wake County 
+
+wakewhite <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot(aes(x = share_white2000, y = share_white2010)) +
+           geom_point() +
+           geom_smooth(method = "lm", se = F) +
+           labs(x = "White population in 2000",
+                y = "White population in 2010",
+                title = "White population share 2000-2010 in Wake County, NC",
+                subtitle = "Several tracts are no longer majority white") 
+wakewhite
+
+ggsave("wakewhite.png")
+
+```
+***Question 10B***
+Between 1990, 2000, and 2010, Wake County saw relatively minor changes to its poverty rate, but significant changes to its demographic composition. Most tracts saw fairly little change in their poverty rate between 1990 and 2010. However, several tracts saw significant increases in their share of Asian and Hispanic populations between 2000 and 2010. At the same time, many tracts saw their share of the White population fall under 50%. This highlights the growing share of nonwhite populations in Wake County over the last few decades.
+
+```{r q11}
+
+#Question 11a: Average absolute mobility rate for neighborhoods grouped by HOLC grade (A, B, C, and D)
+
+holcmobil <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_absolute_mobility = mean(kfr_pooled_pooled_p25, na.rm = TRUE))
+                      
+holcmobil
+                     
+
+```
+There is a clear pattern of increasing upward mobility for children born in the 1980s in Census tracts with higher 1930s HOLC grades. For tracts where a majority of its area was graded A, the average mobility rank at the 25th percentile is roughly 44. As we start to look at tracts with majority of their areas graded B through D, we see a consistent pattern of a decrease of 2-3 mobility percentile ranks. This suggests that practices such as redlining may have had an adverse effect on mobility outcomes in various neighborhoods that persists to this day. 
+
+```{r q11b}
+
+#Q 11b: Black population share in 2000 for neighborhoods grouped by HOLC grade
+
+holcblack <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_blackpop = mean(share_black2000, na.rm = TRUE))
+                      
+holcblack 
+
+```
+It is clear that when looking at the racial composition of HOLC graded neighborhoods, we see that neighborhoods graded A have less than half of Black population share as we see in D rated neighborhoods. There is a clear pattern of increasing Black population share as we move across neighborhoods by their HOLC grade. We cannot rule out race as a confounding variable in driving mobility outcomes. 
+
+```{r q11c}
+
+#Q11C: Average of Black and White pooled absolute mobility for neighborhoods grouped by HOLC grade
+
+holcracefixed <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_blackmobil = mean(kfr_black_pooled_p25, na.rm = TRUE),
+                      mean_whitemobil = mean(kfr_white_pooled_p25, na.rm = TRUE))
+                      
+holcracefixed 
+
+
+```
+When we look at absolute mobility rates by HOLC neighborhood grade and race, racial composition cannot be a confounder in this analysis because we are isolating racial variables. When we look solely at Black mobility rates or white mobility rates, we are looking solely at Black child outcomes, so the potential effect that former HOLC neighborhood grade may have on mobility outcomes should be more clear.
+
+Looking at Black and white pooled mobility rates, it's evident that mobility percentile ranks decrease as neighborhood HOLC grades decrease. There is a decrease of roughly 3 percentile ranks for Black children's mobility outcomes between grade A and D neighborhoods. Similarly, there is a decrease of roughly 6 percentile ranks for White children's outcomes between A and D neighborhoods. What's notable is that the average mobility rank for white children living in D neighborhoods remains higher (44 vs. 34) than the average mobility rank for Black children who lived in A neighborhoods. Clearly, HOLC grade and race have separate but similar impacts on mobility outcomes. 
+
+```{r q11d}
+
+#Q11D: 
+
+```
 
