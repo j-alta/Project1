@@ -21,7 +21,7 @@ view(atlas)
 ```
 
 ***Question 1***
-My name is Jose and I am from Willow Spring, North Carolina. The map below shows adult household income for children born to low income parents. Compared to similar children nationwide, my neighborhood has below average outcomes. 
+My name is Jose and I am from Willow Spring, North Carolina. My community is on the southern edge of Wake County. The map below shows adult household income for children born to low income parents. Compared to similar children nationwide, my neighborhood has below average outcomes. 
 
 ![](map.png)
 
@@ -53,7 +53,166 @@ ggsave("absmob_histo.png")
 
 
 ```
+The histogram shows an approximately normal distribution of mean percentile rank of absolute mobility at the 25th percentile, slightly left skewed. The majority of pooled census tract absolute mobility ranks are between 25 and 50. 
 
+```{r q5}
+
+#Question 5: Summary statistics for kfr_pooled_pooled_p25
+
+sumstats <- summary(atlas$kfr_pooled_pooled_p25, na.rm = TRUE)
+sdstats <- sd(atlas$kfr_pooled_pooled_p25, na.rm = TRUE)
+#creating a table of those values 
+sumstat <- data.frame(c("Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max", "SD", "NAs"),
+                       c(-3.286, 38.070, 42.520, 42.858, 47.350, 103.349, 7.126422, 1189))
+names(sumstat)[1] <- "Summary Stats"
+names(sumstat)[2] <- "Values"
+sumstat <- sumstat |> 
+          mutate(Values = round(Values, 2))
+sumstat
+```
+
+***Question 6***
+`kfr_pooled_pooled_p25` can be negative or above 100 in these data because of the limitations of a simple linear model. The model does not know that we are trying to create a standardized percentile rank variable that (logically) starts at 0 and ends at 100. It simply receives a variable (in this case, parents' percentile rank of national household income pooled at the census tract) and uses it to predict the values of a dependent variable (kid percentile rank of household income). Because we are working with a large dataset, it is natural that the model, even when using standardized percentile values, will report values that are below 0 and above 100. 
+
+```{r q7}
+
+#Question 7: comparing absolute mobiltiy at the 25th percentile in my census tract, state, and across the U.S.
+
+usabsmob <- mean(atlas$kfr_pooled_pooled_p25, na.rm = TRUE) #mean of absolute mobility nationwide
+ncabsmob <- mean(atlas$kfr_pooled_pooled_p25[atlas$state == "37"], na.rm = TRUE) #mean of absolute mobility in NC
+myhood <- atlas %>% subset(state == "37" & county == "183" & tract == "53110") #creating data frame of just my tract
+myhoodabsmob<- mean(myhood$kfr_pooled_pooled_p25, na.rm = TRUE) #mean of absolute mobility in my neighborhood
+
+abscomp <- data.frame(c("My Neighborhood", "North Carolina", "United States"),
+                       c(myhoodabsmob, ncabsmob, usabsmob))
+names(abscomp)[1] <- "Level"
+names(abscomp)[2] <- "Absolute Mobility at the 25th Percentile"
+abscomp
+
+
+```
+
+My neighborhood/census tract has a slightly higher level of absolute mobility (at the 25th percentile) compared to my home state of North Carolina. Both my census tract and North Carolina have a lower level of absolute mobility than the national average.
+
+```{r q8}
+
+#Question 8: calculating and comparing standard deviations of absolute mobility in my home county, state, and nationwide
+
+usasd <- sd(atlas$kfr_pooled_pooled_p25, na.rm = TRUE) #sd of absolute mobility nationwide
+ncsd <- sd(atlas$kfr_pooled_pooled_p25[atlas$state == "37"], na.rm = TRUE) #sd of absolute mobility in NC
+wake_co <- atlas %>% subset(state == "37" & county == "183") #creating data frame of just my tract
+countysd<- sd(wake_co$kfr_pooled_pooled_p25, na.rm = TRUE) #sd of absolute mobility in my county
+
+sdcomp <- data.frame(c("Wake County", "North Carolina", "United States"),
+                       c(countysd, ncsd, usasd))
+names(sdcomp)[1] <- "Level"
+names(sdcomp)[2] <- "Std Dev of Absolute Mobility at the 25th Percentile"
+sdcomp
+```
+
+The standard deviation of mobility outcomes for my Wake County, NC (7.69) is slightly higher than the standard deviation at the national level. North Carolina's mobility outcome standard deviation of 5.75 is lower than the amount of spread at the county or national level. This gives us a sense of how results may vary, which makes sense because of the increasing sample size for each successive level of analysis.
+
+```{r q9}
+
+#Question 9: plotting the relationship between upward mobility and rent in my neighborhood
+
+#9a: Scatter plot of my home county
+
+scatterrent <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot() +
+           geom_point(aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25)) +
+           geom_smooth(aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25), method = "lm", se = F) +
+           labs(x = "Average Rent for Two-Bedroom Apt",
+                y = "Absolute Mobility at the 25th Percentile",
+                title = "Relationship between rent and absolute mobility in Wake County, NC") +
+          scale_x_continuous(labels = scales::dollar_format()) 
+scatterrent
+
+ggsave("scatterrent.png")
+
+
+```
+
+***Question 9B***
+There is an apparent positive correlation between rent and absolute mobility at the 25th percentile. The line of best fit suggests that as rent increases in my home county, the percentile rank of absolute mobility increases as well. This suggests that low income children living in higher-priced tracts experience higher mobility than low income children living in cheaper (and, presumably, more economicallly and socially disadvantaged) tracts. 
+
+***Question 9C***
+Opportunity bargains are neighborhoods with cheaper than average rents and above average absolute mobility outcomes. For this question, I am defining a given neighborhood an opportunity bargain if it has under $1500 in median two-bedroom rent and the highest percentile rank for absolute mobility at the 25th percentile for my given county. 
+
+```{r q9c1}
+
+#Question 9c: Defining Opportunity Bargains
+myhood <- atlas %>% subset(state == "37" & county == "183" & tract == "53110") #creating data frame of just my tract
+myhoodabsmob
+myhoodrent <- mean(myhood$rent_twobed2015, na.rm = TRUE) #myneighborhood rent 
+myhoodrent
+
+```
+
+With an absolute mobility rank (at the 25th percentile) of 38 and a median two-bedroom apartment rent of $710, my neighborhood can perhaps be considered an opportunity tract, but we would need to compare it to other tracts in my county to make a more practical judgment. What about other census tracts in my home county of Wake County?
+
+```{r 9c2}
+
+#Finding other opportunity bargains in my home county
+wake_co <- atlas %>% subset(state == "37" & county == "183") #creating data frame of just my tract
+wake_co$bargain_index <- wake_co$kfr_pooled_pooled_p25/wake_co$rent_twobed2015
+wake_bargains <- wake_co |> 
+                 select(tract_name, tract, kfr_pooled_pooled_p25, rent_twobed2015, bargain_index) |> 
+                 arrange(desc(bargain_index))
+print(wake_bargains)
+
+```
+
+Using the opportunity bargain index method derived by dividing the absolute mobility rank by the median two-bedroom rent, we see that my census tract is #21 out of the 186 tracts in my home county. Furthermore, we see that my tract's bargain index variable is influenced by the very cheap median rent in my neighborhood - but cheap rent alone does not make an opportunity bargain. Therefore, I would not classify my neighborhood/census tract as an opportunity bargain. I will go ahead and determine opportunity bargains those census tracts with rents under $1500 and an absolute mobility rank of over 50. Let's see where they are, if any.
+
+```{r q9c3}
+
+#Finding opportunity bargains in Wake County
+top_bargains <- wake_bargains |> 
+                filter(rent_twobed2015 <= 1500,
+                       kfr_pooled_pooled_p25 >= 50)
+print(top_bargains)
+
+```
+So now we see a list of 17 census tracts - from my experience, most of them clustered in the neighborhoods of upper middle-class North Raleigh and rapidly growing Cary - that we can reasonably say are opportunity bargains. Let's highlight them on the scatterplot of rent and absolute mobility to place them in the context of other census tracts. Do they stand out?
+
+```{r 9c4}
+
+#Highlighting opportunity bargains in Wake County, NC
+
+scatterbargain <- atlas |> 
+           filter(state == 37,
+                  county == 183) |> 
+           ggplot() +
+           geom_point(aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25)) +
+           geom_point(data = top_bargains, aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25),
+                      color ="red", size = 3) +
+           geom_text(aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25, label = tract), check_overlap = TRUE,
+                     size = 3, nudge_x = 2, nudge_y = 1) +
+           geom_smooth(aes(x = rent_twobed2015, y = kfr_pooled_pooled_p25), method = "lm", se = F) +
+           labs(x = "Average Rent for Two-Bedroom Apt",
+                y = "Absolute Mobility at the 25th Percentile",
+                title = "Relationship between rent and absolute mobility in Wake County, NC",
+                subtitle = "Opportunity bargains highlighted in red") +
+          scale_x_continuous(labels = scales::dollar_format()) 
+scatterbargain
+
+ggsave("scatterbargain.png")
+
+```
+
+And there they are! These are the bargain tracts with cheap rent and above average mobility outcomes in Wake County, NC.
+
+```{r q10}
+
+#Question 10
+
+
+
+
+```
 
 
 
