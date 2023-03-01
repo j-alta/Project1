@@ -14,6 +14,7 @@ library(tidyquant)
 library(purrr)
 library(sandwich)
 library(lmtest)
+library(tidyr)
 atlas <- read_dta("atlas.dta")
 view(atlas)
 
@@ -369,7 +370,284 @@ Looking at Black and white pooled mobility rates, it's evident that mobility per
 
 ```{r q11d}
 
-#Q11D: 
+#Q11D: Analyzing potential causal relationship between HOLC neighborhood grade and vegetation, extreme heat, and land area development
+
+holccausal <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_veg = mean(vegetation, na.rm = TRUE),
+                      mean_heat = mean(extreme_heat, na.rm = TRUE),
+                      mean_developed = mean(developed, na.rm = TRUE))
+                      
+holccausal
 
 ```
+The analysis shows that neighborhoods with higher HOLC grades have more vegetation, lower extreme heat temperatures, and slightly less developed land (all three variables relative to a baseline). While all graded neighborhood levels have lower levels of vegetation than the baseline (which makes sense, since graded neighborhoods were more likely to be in urban areas), the level of vegetation gets lower with each decreasing HOLC grade. As HOLC grades decrease, there is a rise in extreme land surface heat during summer. Finally, while all graded tracts are fairly highly developed, lower graded tracts have higher rates of land development. This suggests that factors like less green space and investment in public parks are a legacy of redlining, and potentially contributing to lower mobility outcomes today. 
+
+```{r q11e}
+
+#Q11E: Visualizing variables means affected by HOLC neighborhood grades 
+
+#Absolute mobility pooled for all races and genders, grouped by HOLC neighborhood grade
+
+mobilgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_absolute_mobility = mean(kfr_pooled_pooled_p25, na.rm = TRUE)) |> 
+            ggplot(aes(x = grade, y = mean_absolute_mobility, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Absolute Mobility at the 25th Percentile",
+                 title = "Absolute Mobility Across all Racial Groups and Genders",
+                 fill = "HOLC Grade") +
+            theme_clean()
+            
+mobilgraph
+
+ggsave("mobilgraph.png")
+```
+```{r q11f}
+
+#Visualizing Black population share across census tracts grouped by HOLC neighborhood grade
+
+holcblackgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_blackpop = mean(share_black2000, na.rm = TRUE))|> 
+            ggplot(aes(x = grade, y = mean_blackpop, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Black Population Share",
+                 title = "Black Population Share by HOLC Grade",
+                 fill = "HOLC Grade") +
+            theme_clean()
+            
+holcblackgraph
+
+ggsave("holcblackgraph.png")
+
+```
+
+```{r q11g}
+
+#Visualizing Black and White pooled absolute mobility for neighborhoods grouped by HOLC grade
+
+#Black mobility by HOLC graded neighborhood
+blackmobilgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_blackmobil = mean(kfr_black_pooled_p25, na.rm = TRUE),
+                      mean_whitemobil = mean(kfr_white_pooled_p25, na.rm = TRUE)) |> 
+            ggplot() +
+            geom_bar(aes(x = grade, y = mean_blackmobil, fill = grade), stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Absolute Mobility at the 25th Percentile",
+                 title = "Black Absolute Mobility by HOLC Grade",
+                 fill = "HOLC Grade") +
+            theme_clean()
+                      
+blackmobilgraph
+ggsave("blackmobilgraph.png")
+
+#White mobility by HOLC graded neighborhood
+whitemobilgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_blackmobil = mean(kfr_black_pooled_p25, na.rm = TRUE),
+                      mean_whitemobil = mean(kfr_white_pooled_p25, na.rm = TRUE)) |> 
+            ggplot(aes(x = grade, y = mean_whitemobil, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Absolute Mobility at the 25th Percentile",
+                 title = "White Absolute Mobility by HOLC Grade",
+                 fill = "HOLC Grade") +
+            theme_clean()
+                      
+whitemobilgraph
+ggsave("whitemobilgraph.png")
+
+
+```
+
+```{r q11h}
+
+#Visualizing vegetation by HOLC neighborhood grade
+
+veggraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_veg = mean(vegetation, na.rm = TRUE),
+                      mean_heat = mean(extreme_heat, na.rm = TRUE),
+                      mean_developed = mean(developed, na.rm = TRUE)) |> 
+            ggplot(aes(x = grade, y = mean_veg, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Change in Normalized Difference Vegetation Index",
+                 title = "Difference in Vegetation by HOLC Grade",
+                 subtitle = "Relative to baseline",
+                 fill = "HOLC Grade") +
+            theme_clean()
+                      
+veggraph
+
+ggsave("veggraph.png")
+
+
+```
+
+
+
+
+```{r q11i}
+
+#Visualizing extreme summer daytime heat by HOLC grade
+
+heatgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_veg = mean(vegetation, na.rm = TRUE),
+                      mean_heat = mean(extreme_heat, na.rm = TRUE),
+                      mean_developed = mean(developed, na.rm = TRUE)) |> 
+            ggplot(aes(x = grade, y = mean_heat, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Extreme Heat",
+                 title = "Extreme Summer Daytime Urban Heat",
+                 subtitle = "Relative to baseline",
+                 fill = "HOLC Grade") +
+            theme_clean()
+                      
+heatgraph
+
+ggsave("heatgraph.png")
+
+
+```
+```{r q11j}
+#Visualizing land development by HOLC grade
+
+devgraph <- atlas |> 
+             mutate(grade = case_when(HOLC_A > 0.5 & !is.na(HOLC_A) ~ 'A',
+                                      HOLC_B > 0.5 & !is.na(HOLC_B) ~ 'B',
+                                      HOLC_C > 0.5 & !is.na(HOLC_C) ~ 'C',
+                                      HOLC_D > 0.5 & !is.na(HOLC_D) ~ 'D')) |> 
+            group_by(grade) |> 
+            summarize(mean_veg = mean(vegetation, na.rm = TRUE),
+                      mean_heat = mean(extreme_heat, na.rm = TRUE),
+                      mean_developed = mean(developed, na.rm = TRUE)) |> 
+            ggplot(aes(x = grade, y = mean_developed, fill = grade)) +
+            geom_bar(stat = "identity", show.legend = TRUE, width = 0.6) +
+            scale_fill_manual(values = c("tomato1", "tomato2", "tomato3", "tomato4")) +
+            labs(x = "",
+                 y = "Fraction of Land Area Developed",
+                 title = "Land Development by HOLC Grade",
+                 fill = "HOLC Grade") 
+                      
+devgraph
+
+ggsave("devgraph.png")
+
+
+```
+```{r q12}
+
+#Question 12: Tracking air pollution via particulate matter changes over time 
+
+pm82 <- mean(atlas$pm25_1982, na.rm = TRUE)
+pm90 <- mean(atlas$pm25_1990, na.rm = TRUE)
+pm00 <- mean(atlas$pm25_2000, na.rm = TRUE)
+pm10 <- mean(atlas$pm25_2010, na.rm = TRUE)
+
+airpollution <- data.frame(c("1982", "1990", "2000", "2010"),
+                           c(pm82, pm90, pm00, pm10))
+names(airpollution)[1] <- "Year"
+names(airpollution)[2] <- "Particulate Matter Level"
+airpollution
+
+```
+
+We see that air pollution, as measured by the particulate matter level data, has steadily decreased in the United States since 1982, with an average decrease of about 4 units fine particulate matter every 10 years. 
+
+```{r q12b}
+
+#Q12B: Comparing air pollution in my home Census tract, state, and nationwide
+
+myhood <- atlas %>% subset(state == "37" & county == "183" & tract == "53110") #creating data frame of just my tract
+myhoodap <- mean(myhood$pm25_1990, na.rm = TRUE)
+ncap <- mean(atlas$pm25_1990[atlas$state == "37"], na.rm = TRUE)
+usap <- mean(atlas$pm25_1990, na.rm = TRUE)
+
+apcomp <- data.frame(c("My Census Tract", "North Carolina", "United States"),
+                       c(myhoodap, ncap, usap))
+names(apcomp)[1] <- "Level"
+names(apcomp)[2] <- "PM Concentration"
+apcomp
+
+
+```
+
+We see that the national air pollution average in 1990 was approximately 16.84 PM units, with higher concentrations of particulate matter for my home tract (17.37), and even higher for my home state of North Carolina (18.58). 
+
+```{r q12c}
+
+#Q12C: Visualizing the relationship between absolute mobility and air pollution in 1990 
+
+scatterap <- atlas |> 
+             ggplot(aes(x = pm25_1990, y = kfr_pooled_pooled_p25)) +
+             stat_binmean(n = 50) +
+             stat_smooth(method = "lm", se = FALSE) +
+             labs(title = "Relationship between air pollution levels and absolute mobility",
+                  x = "Concentration of ambient fine particulate matter (PM 2.5) in 1990",
+                  y = "Absolute Mobility at the 25th percentile") 
+
+scatterap
+
+ggsave("scatterap.png")
+
+```
+
+```{r q12d}
+
+#Q12D: Deriving the correlation coefficient between absolute mobility and air pollution in 1990
+
+cor(atlas$kfr_pooled_pooled_p25, atlas$pm25_1990, use = "complete.obs")
+
+```
+
+The correlation coefficient between absolute mobility at the 25th percentile and air pollution levels in 1990 is approximately -0.18. This is smaller than the correlation at the county level. This makes sense because data grouped at the tract level leads to a larger sample size than data grouped at the county level. With a larger sampel size, variability increases, leading to a reduced correlation coefficient. 
+
+```{r q13a}
+
+#Q13A: Visualizing 
+
+```
+
+
 
