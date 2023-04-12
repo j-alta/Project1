@@ -1,0 +1,31 @@
+---
+title: "Project Pt. 2"
+output: pdf_document
+date: "2023-04-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#installing required packages and loading Opportunity Insights dataset
+library(tidyverse)
+library(haven)
+library(ggthemes)
+library(statar) 
+library(tidyquant)
+library(purrr)
+library(sandwich)
+library(lmtest)
+library(tidyr)
+atlas <- read_dta("atlas.dta")
+view(atlas)
+
+
+```
+
+```{r}
+
+
+
+
+```
+
