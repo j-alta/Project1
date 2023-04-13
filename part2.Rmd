@@ -1,11 +1,11 @@
 ---
-title: "Project Pt. 2"
+title: "project_pt2"
 output: pdf_document
-date: "2023-04-12"
+date: "2023-04-13"
 ---
 
-```{r}
-#installing required packages and loading Opportunity Insights dataset
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
 library(ggthemes)
@@ -18,17 +18,14 @@ library(tidyr)
 library(knitr)
 library(kableExtra)
 library(webshot)
-install.packages("magick")
 library(magick)
-install.packages("stargazer")
 library(stargazer)
-install.packages("fixest")
 library(fixest)
 atlas <- read_dta("atlas.dta")
 view(atlas)
-
-
 ```
+
+
 
 ```{r}
 #Initial data wrangling 
@@ -115,6 +112,7 @@ names(demos)[4] <- "2010 Hispanic Population Share"
 demos
 
 ```
+
 
 ```{r}
 
@@ -308,6 +306,7 @@ ggsave("currentjail.png")
 
 ```
 
+
 ```{r}
 
 #Correlation coefficient table between present-day statistics and upward mobility
@@ -393,6 +392,7 @@ table_presentday <- coefcomp |>
 table_presentday
 
 ```
+
 
 ```{r}
 #Historical covariates and their causal relationship to upward mobility
@@ -701,35 +701,88 @@ table_historic
 
 #Multivariate regression of historical covariates and upward mobility
 
-#Wake County
-wakemultireg <- feols(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+#Wake County model 1 
+wakereg1 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
                                              frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
                                              singleparent_share1990 + emp2000 + popdensity2000,
                                             data = wake_co)
-                       
-summary(wakemultireg)
+summary(wakereg1)
+
+#Model 2
+wakereg2 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                             frac_coll_plus2000,
+                                            data = wake_co)
+summary(wakereg2)
+
+#Model 3
+wakereg3 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                            med_hhinc1990,
+                                            data = wake_co)
+summary(wakereg3)
+
+#Model 4
+wakereg4 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                            poor_share1990,
+                                            data = wake_co)
+summary(wakereg4)
+
+#Model 5
+wakereg5 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                            singleparent_share1990,
+                                            data = wake_co)
+summary(wakereg5)
+
+#Model 6
+wakereg6 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                            emp2000,
+                                            data = wake_co)
+summary(wakereg6)
+
+#Model 7
+wakereg7 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+                                            popdensity2000,
+                                            data = wake_co)
+summary(wakereg7)
 
 
 #Fuquay-Varina tracts
-fuquaymultireg <- feols(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+fuquayreg <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
                                              frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
                                              singleparent_share1990 + emp2000 + popdensity2000,
                                             data = fuquay)
                        
-summary(fuquaymultireg)
+summary(fuquayreg)
 
 #Cary Tracts
-carymultireg <- feols(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
+caryreg <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
                                              frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
                                              singleparent_share1990 + emp2000 + popdensity2000,
                                             data = cary)
                        
-summary(carymultireg)
+summary(caryreg)
 
-#Creating table with stargazer
-stargazer(wakemultireg, fuquaymultireg, carymultireg, title="Regression Results", align=TRUE)
+# Create a regression table using the stargazer() function
+stargazer(wakereg1, wakereg2, wakereg3, wakereg4, wakereg5, wakereg6, wakereg7, type = "text",  # Change 'type' to "latex" or "html" for different output formats
+          title = "Series of regressions on upward mobility in Wake County",
+          align = TRUE,
+          column.labels = c("Full Covariate Model", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6", "Model 7"),
+          covariate.labels = c("2000 White pop. share", "2000 Black pop. share", "2000 Hisp. pop. share",
+                               "2000 College degree plus share", "1990 Median household income", "1990 poverty share",
+                               "1990 Single parent share", "2000 Employment rate", "2000 Population density"),
+          dep.var.caption = "Dependent variable: Absolute mobility at the 25th percentile",
+          dep.var.labels.include = FALSE,
+          digits = 2,
+          intercept.bottom = TRUE,
+          model.numbers = TRUE,
+          no.space = TRUE,
+          omit.stat = c("f", "ser"),
+          single.row = TRUE)
+
 
 
 ```
+
+
+
 
 
