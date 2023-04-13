@@ -2,6 +2,7 @@
 title: "project_pt2"
 output: pdf_document
 date: "2023-04-13"
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -385,11 +386,14 @@ table_presentday <- coefcomp |>
                           align = "lcr",
                           col.names = c("Covariate", "Region", "Correlation Coefficient")) |> 
                     kable_styling("striped",  # Table style: "striped", "bordered", "hover", "condensed", "responsive", "basic"
-                   full_width = FALSE) |> 
-                   save_kable(file = "presentday.png", 
-                              zoom = 1)
+                   full_width = FALSE)  
+
 #check 
 table_presentday
+
+sink("table_presentday.html")
+cat(table_presentday)
+sink()
 
 ```
 
@@ -685,12 +689,13 @@ table_historic <- coefcomp_historic |>
                           align = "lcr",
                           col.names = c("Covariate", "Region", "Correlation Coefficient")) |> 
                     kable_styling("striped",  # Table style: "striped", "bordered", "hover", "condensed", "responsive", "basic"
-                   full_width = FALSE) |> 
-                   save_kable(file = "historic.png", 
-                              zoom = 1)
+                   full_width = FALSE) 
 #check 
 table_historic
 
+sink("table_historic.html")
+cat(table_historic)
+sink()
 
 
 
@@ -701,48 +706,55 @@ table_historic
 
 #Multivariate regression of historical covariates and upward mobility
 
-#Wake County model 1 
+#Wake County model 1 w race
 wakereg1 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
                                              frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
                                              singleparent_share1990 + emp2000 + popdensity2000,
-                                            data = wake_co)
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg1)
 
-#Model 2
-wakereg2 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                             frac_coll_plus2000,
-                                            data = wake_co)
+#Wake County model 2 w/o race
+wakereg2 <- lm(kfr_pooled_pooled_p25 ~ 
+                                             frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
+                                             singleparent_share1990 + emp2000 + popdensity2000,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg2)
 
 #Model 3
-wakereg3 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                            med_hhinc1990,
-                                            data = wake_co)
+wakereg3 <- lm(kfr_pooled_pooled_p25 ~ 
+                                             frac_coll_plus2000,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg3)
 
 #Model 4
-wakereg4 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                            poor_share1990,
-                                            data = wake_co)
+wakereg4 <- lm(kfr_pooled_pooled_p25 ~ 
+                                            med_hhinc1990,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg4)
 
 #Model 5
-wakereg5 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                            singleparent_share1990,
-                                            data = wake_co)
+wakereg5 <- lm(kfr_pooled_pooled_p25 ~ 
+                                            poor_share1990,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg5)
 
 #Model 6
-wakereg6 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                            emp2000,
-                                            data = wake_co)
+wakereg6 <- lm(kfr_pooled_pooled_p25 ~ 
+                                            singleparent_share1990,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg6)
 
 #Model 7
-wakereg7 <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_hisp2000 +
-                                            popdensity2000,
-                                            data = wake_co)
+wakereg7 <- lm(kfr_pooled_pooled_p25 ~ 
+                                            emp2000,
+                                            data = wake_co, na.action = na.omit)
 summary(wakereg7)
+
+#Model 8
+wakereg8 <- lm(kfr_pooled_pooled_p25 ~ 
+                                            popdensity2000,
+                                            data = wake_co, na.action = na.omit)
+summary(wakereg8)
 
 
 #Fuquay-Varina tracts
@@ -758,14 +770,13 @@ caryreg <- lm(kfr_pooled_pooled_p25 ~ share_white2000 + share_black2000 + share_
                                              frac_coll_plus2000 + med_hhinc1990 + poor_share1990 +
                                              singleparent_share1990 + emp2000 + popdensity2000,
                                             data = cary)
-                       
 summary(caryreg)
 
 # Create a regression table using the stargazer() function
-stargazer(wakereg1, wakereg2, wakereg3, wakereg4, wakereg5, wakereg6, wakereg7, type = "text",  # Change 'type' to "latex" or "html" for different output formats
+reg_table <- stargazer(wakereg1, wakereg2, wakereg3, wakereg4, wakereg5, wakereg6, type = "html",  
           title = "Series of regressions on upward mobility in Wake County",
           align = TRUE,
-          column.labels = c("Full Covariate Model", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6", "Model 7"),
+          column.labels = c("Full Covariate Model", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6", "Model 7", "Model 8"),
           covariate.labels = c("2000 White pop. share", "2000 Black pop. share", "2000 Hisp. pop. share",
                                "2000 College degree plus share", "1990 Median household income", "1990 poverty share",
                                "1990 Single parent share", "2000 Employment rate", "2000 Population density"),
@@ -775,9 +786,11 @@ stargazer(wakereg1, wakereg2, wakereg3, wakereg4, wakereg5, wakereg6, wakereg7, 
           intercept.bottom = TRUE,
           model.numbers = TRUE,
           no.space = TRUE,
-          omit.stat = c("f", "ser"),
-          single.row = TRUE)
+          omit.stat = c("f", "ser"))
 
+sink("stargazer_table.html")
+cat(reg_table)
+sink()
 
 
 ```
